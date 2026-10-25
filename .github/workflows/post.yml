@@ -1,0 +1,24 @@
+name: Threads Auto Poster
+on:
+  schedule:
+    - cron: '0 22 * * *'   # JST 07:00
+    - cron: '0 1 * * *'    # JST 10:00
+    - cron: '0 3 * * *'    # JST 12:00
+    - cron: '0 7 * * *'    # JST 16:00
+    - cron: '0 10 * * *'   # JST 19:00
+  workflow_dispatch:
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install gspread==6.1.2 google-auth==2.35.0 requests==2.32.3
+      - name: Run poster
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: python poster.py
