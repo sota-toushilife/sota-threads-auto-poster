@@ -44,29 +44,55 @@ def main():
     print(f"現在のヘッダー: {header}")
     print(f"行数: {len(rows)}")
 
-    # 旧ヘッダーの列インデックス（0-based）
-    try:
-        old_sched  = header.index("scheduled_at")
-        old_body   = header.index("body")
-        old_posted = header.index("posted")
-        old_id     = header.index("post_id")
-    except ValueError as e:
-        print(f"旧ヘッダーが見つかりません: {e}")
-        print("すでに変換済みの可能性があります。終了します。")
+    # ヘッダーが既にNEW_HEADERSと一致しているか確認
+    if header == NEW_HEADERS:
+        print("すでに最新の列順です。終了します。")
         return
 
     # 全データを読み込む
     data_rows = rows[1:]  # ヘッダーを除いたデータ行
 
+    # 旧ヘッダー（英語）か新ヘッダー（日本語・旧順）かを判定して列マップを作る
+    def get_col(h, name, fallback=None):
+        try:
+            return h.index(name)
+        except ValueError:
+            return fallback
+
+    # 英語ヘッダー（初回変換前）
+    if "scheduled_at" in header:
+        idx_sched   = get_col(header, "scheduled_at")
+        idx_body    = get_col(header, "body")
+        idx_posted  = get_col(header, "posted")
+        idx_post_id = get_col(header, "post_id")
+        idx_url     = None
+        old_format  = True
+    else:
+        # 日本語ヘッダー（列順が違う旧版）
+        idx_sched   = get_col(header, "投稿日時")
+        idx_body    = get_col(header, "投稿文")
+        idx_posted  = get_col(header, "状態")
+        idx_post_id = get_col(header, "投稿ID")
+        idx_url     = get_col(header, "投稿URL")
+        old_format  = False
+
+    # 既存のインサイト列を列名→インデックスでマップ
+    insight_cols = ["再生数","閲覧者数","プロフアクセス数","フォロー数","いいね数",
+                    "いいね率","返信率","シェア率","引用率","再投稿率"]
+    insight_idx = {name: get_col(header, name) for name in insight_cols}
+
     # 新しいシートデータを構築
-    # 新ヘッダー行
     new_rows = [NEW_HEADERS]
 
     for row in data_rows:
-        sched    = row[old_sched].strip()  if old_sched < len(row) else ""
-        body     = row[old_body].strip()   if old_body < len(row) else ""
-        posted   = row[old_posted].strip() if old_posted < len(row) else ""
-        post_id  = row[old_id].strip()     if old_id < len(row) else ""
+        def cv(idx):
+            return row[idx].strip() if idx is not None and idx < len(row) else ""
+
+        sched   = cv(idx_sched)
+        body    = cv(idx_body)
+        posted  = cv(idx_posted)
+        post_id = cv(idx_post_id)
+        url     = cv(idx_url)
 
         # 曜日を計算
         weekday = ""
@@ -74,29 +100,23 @@ def main():
         if dt:
             weekday = WEEKDAY_MAP.get(dt.weekday(), "")
 
-        # 状態を変換
-        if posted.upper() == "TRUE":
-            status = "投稿済み"
+        # 状態を変換（英語の場合）
+        if old_format:
+            if posted.upper() == "TRUE":
+                status = "投稿済み"
+            else:
+                status = "投稿前"
         else:
-            status = "投稿前"
+            status = posted  # すでに日本語
 
         new_row = [
-            sched,     # 投稿日時
-            weekday,   # 曜日
-            body,      # 投稿文
-            status,    # 状態
-            "",        # 投稿URL（既存分は空、今後自動取得）
-            "",        # 再生数
-            "",        # 閲覧者数
-            "",        # プロフアクセス数
-            "",        # フォロー数
-            "",        # いいね数
-            "",        # いいね率
-            "",        # 返信率
-            "",        # シェア率
-            "",        # 引用率
-            "",        # 再投稿率
-            post_id,   # 投稿ID（一番右）
+            sched,
+            weekday,
+            body,
+            status,
+            url,
+        ] + [cv(insight_idx.get(name)) for name in insight_cols] + [
+            post_id,  # 投稿ID（一番右）
         ]
         new_rows.append(new_row)
 
