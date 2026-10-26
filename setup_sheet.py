@@ -14,9 +14,9 @@ GOOGLE_CREDENTIALS_JSON = os.environ["GOOGLE_CREDENTIALS_JSON"]
 JST = timezone(timedelta(hours=9))
 
 NEW_HEADERS = [
-    "投稿日時", "曜日", "投稿文", "状態", "投稿ID", "投稿URL",
+    "投稿日時", "曜日", "投稿文", "状態", "投稿URL",
     "再生数", "閲覧者数", "プロフアクセス数", "フォロー数", "いいね数",
-    "いいね率", "返信率", "シェア率", "引用率", "再投稿率"
+    "いいね率", "返信率", "シェア率", "引用率", "再投稿率", "投稿ID"
 ]
 
 WEEKDAY_MAP = {0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"}
@@ -85,7 +85,6 @@ def main():
             weekday,   # 曜日
             body,      # 投稿文
             status,    # 状態
-            post_id,   # 投稿ID
             "",        # 投稿URL（既存分は空、今後自動取得）
             "",        # 再生数
             "",        # 閲覧者数
@@ -97,6 +96,7 @@ def main():
             "",        # シェア率
             "",        # 引用率
             "",        # 再投稿率
+            post_id,   # 投稿ID（一番右）
         ]
         new_rows.append(new_row)
 
