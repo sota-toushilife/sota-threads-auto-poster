@@ -47,11 +47,24 @@ sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 rows = sheet.get_all_values()
 header = rows[0]
 
-# 重複チェック
-existing = {r[header.index("投稿日時")].strip() for r in rows[1:] if r}
-if sched_str in existing:
-    print(f"すでに存在: {sched_str}")
-else:
-    new_row = [sched_str, weekday, body, "投稿前", "", "", "", "", "", "", "", "", "", "", "", ""]
-    sheet.append_rows([new_row], value_input_option="USER_ENTERED")
-    print(f"追加完了: {sched_str} ({weekday})")
+new_row = [sched_str, weekday, body, "投稿前", "", "", "", "", "", "", "", "", "", "", "", ""]
+
+# 既存の同じ日時の行をすべて削除（重複があれば削除してから再挿入）
+sched_col = header.index("投稿日時")
+rows_to_delete = [i+2 for i, r in enumerate(rows[1:]) if r and r[sched_col].strip() == sched_str]
+for row_num in reversed(rows_to_delete):
+    sheet.delete_rows(row_num)
+    print(f"既存行を削除: {row_num}行目")
+
+# 最新のシート状態を再取得
+rows = sheet.get_all_values()
+
+# 日付順の正しい位置に挿入
+insert_index = len(rows) + 1
+for idx, r in enumerate(rows[1:], start=2):
+    cell = r[0].strip() if r else ""
+    if cell and cell > sched_str:
+        insert_index = idx
+        break
+sheet.insert_row(new_row, insert_index, value_input_option="USER_ENTERED")
+print(f"追加完了: {sched_str} ({weekday}) → {insert_index}行目に挿入")
