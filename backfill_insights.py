@@ -120,7 +120,7 @@ def main():
             sheet.update_cell(row_n, col_n, val)
             time.sleep(0.1)  # レート制限対策
 
-        print(f"行{i}: 書き込み完了 views={views}, likes={likes}, follows={follows}")
+        print(f"行{i}: 書き込み完了 views={views}, likes={likes}, replies={replies}")
         filled += 1
         time.sleep(1)  # API負荷軽減
 
