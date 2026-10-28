@@ -67,7 +67,9 @@ def get_permalink(post_id):
 
 def get_insights(post_id):
     """投稿のインサイトを取得"""
-    metrics = "views,likes,replies,reposts,quotes,shares,follows,profile_visits"
+    # Threads Media Insights API で有効なpost-levelメトリクスのみ
+    # follows/profile_visits はアカウントレベルのみ → 含めるとAPIエラーになる
+    metrics = "views,likes,replies,reposts,quotes"
     try:
         resp = requests.get(
             f"https://graph.threads.net/v1.0/{post_id}/insights",
@@ -212,22 +214,16 @@ def main():
             views = insights.get("views", 0)
             likes = insights.get("likes", 0)
             replies = insights.get("replies", 0)
-            shares = insights.get("shares", 0)
             quotes = insights.get("quotes", 0)
             reposts = insights.get("reposts", 0)
-            follows = insights.get("follows", 0)
-            profile_visits = insights.get("profile_visits", 0)
             def rate(n, d):
                 return round(n / d * 100, 2) if d > 0 else 0
             updates = []
             if c_views:    updates.append((i, c_views,    views))
             if c_reach:    updates.append((i, c_reach,    views))  # Threads APIはreach非対応のためviewsと同値
-            if c_profile:  updates.append((i, c_profile,  profile_visits))
-            if c_follows:  updates.append((i, c_follows,  follows))
             if c_likes:    updates.append((i, c_likes,    likes))
             if c_like_r:   updates.append((i, c_like_r,   rate(likes, views)))
             if c_reply_r:  updates.append((i, c_reply_r,  rate(replies, views)))
-            if c_share_r:  updates.append((i, c_share_r,  rate(shares, views)))
             if c_quote_r:  updates.append((i, c_quote_r,  rate(quotes, views)))
             if c_repost_r: updates.append((i, c_repost_r, rate(reposts, views)))
             for row_n, col_n, val in updates:
