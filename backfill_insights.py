@@ -13,6 +13,8 @@ H_SCHED   = "投稿日時"
 H_STATUS  = "状態"
 H_VIEWS   = "再生数"
 H_REACH   = "閲覧者数"
+H_PROFILE = "プロフアクセス数"
+H_FOLLOWS = "フォロー数"
 H_LIKES   = "いいね数"
 H_LIKE_R  = "いいね率"
 H_REPLY_R = "返信率"
@@ -34,9 +36,10 @@ def col_index(header, name):
     except ValueError: return None
 
 def get_insights(post_id):
-    # Threads Media Insights API で有効なpost-levelメトリクスのみ指定
-    # follows/profile_visits はアカウントレベルのみ → 含めるとAPIエラーになる
-    metrics = "views,likes,replies,reposts,quotes"
+    # Threads Media Insights API の有効post-levelメトリクス
+    # follows/profile_visits → post-levelでは存在しないため除外（0埋め）
+    # shares → "in development" だが有効
+    metrics = "views,likes,replies,reposts,quotes,shares"
     try:
         resp = requests.get(
             f"https://graph.threads.net/v1.0/{post_id}/insights",
@@ -69,6 +72,8 @@ def main():
     c_id       = col_index(header, H_ID)
     c_views    = col_index(header, H_VIEWS)
     c_reach    = col_index(header, H_REACH)
+    c_profile  = col_index(header, H_PROFILE)
+    c_follows  = col_index(header, H_FOLLOWS)
     c_likes    = col_index(header, H_LIKES)
     c_like_r   = col_index(header, H_LIKE_R)
     c_reply_r  = col_index(header, H_REPLY_R)
@@ -103,16 +108,21 @@ def main():
         replies = insights.get("replies", 0)
         quotes = insights.get("quotes", 0)
         reposts = insights.get("reposts", 0)
+        shares = insights.get("shares", 0)
 
         def rate(n, d):
             return round(n / d * 100, 2) if d > 0 else 0
 
+        # follows/profile_visits はThreads APIのpost-levelに存在しないため0固定
         updates = []
         if c_views:    updates.append((i, c_views,    views))
         if c_reach:    updates.append((i, c_reach,    views))
+        if c_profile:  updates.append((i, c_profile,  0))
+        if c_follows:  updates.append((i, c_follows,  0))
         if c_likes:    updates.append((i, c_likes,    likes))
         if c_like_r:   updates.append((i, c_like_r,   rate(likes, views)))
         if c_reply_r:  updates.append((i, c_reply_r,  rate(replies, views)))
+        if c_share_r:  updates.append((i, c_share_r,  rate(shares, views)))
         if c_quote_r:  updates.append((i, c_quote_r,  rate(quotes, views)))
         if c_repost_r: updates.append((i, c_repost_r, rate(reposts, views)))
 
