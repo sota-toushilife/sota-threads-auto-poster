@@ -156,10 +156,15 @@ def main():
             continue
 
         diff = abs((now_jst - sched_dt).total_seconds())
-        print(f"行{i}: {scheduled_at} -> 差分{diff:.0f}秒")
+        overdue = (now_jst - sched_dt).total_seconds()  # 正=過去(遅延), 負=未来
+        print(f"行{i}: {scheduled_at} -> 差分{diff:.0f}秒 (overdue={overdue:.0f}秒)")
 
-        # ===== 通常投稿処理 (±15分以内) =====
-        if diff <= 900:
+        # ===== 通常投稿処理 =====
+        # GitHub Actionsのcron遅延(最大6h+)に対応するため、
+        # 「予定時刻から最大8時間後まで」後追い投稿を許容する
+        # 未来の投稿（overdue < 0）は絶対に投稿しない
+        # すでに投稿済みの行はスキップ（二重投稿防止）
+        if 0 <= overdue <= 28800:  # 0〜8時間以内の遅延を許容
             status = row[c_status - 1].strip() if c_status and len(row) >= c_status else ""
             if status == STATUS_DONE:
                 print(f"行{i}: 投稿済みのためスキップ")
@@ -185,9 +190,10 @@ def main():
             except Exception as e:
                 print(f"行{i}: 投稿失敗 - {e}")
 
-        # ===== インサイト書き込み (24時間前の投稿、±15分以内) =====
-        yesterday_diff = abs((now_jst - timedelta(days=1) - sched_dt).total_seconds())
-        if yesterday_diff <= 900:
+        # ===== インサイト書き込み (24時間〜32時間前の投稿) =====
+        # GitHub Actions遅延対応: 24h後±8h以内なら取得する
+        hours_since_post = (now_jst - sched_dt).total_seconds() / 3600
+        if 24 <= hours_since_post <= 32:
             post_id_val = row[c_id - 1].strip() if c_id and len(row) >= c_id else ""
             if not post_id_val:
                 continue
