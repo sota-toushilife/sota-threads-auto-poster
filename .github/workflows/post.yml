@@ -2,9 +2,7 @@ name: Threads Auto Poster
 on:
   schedule:
     - cron: '0 22 * * *'   # JST 07:00
-    - cron: '0 1 * * *'    # JST 10:00
     - cron: '0 3 * * *'    # JST 12:00
-    - cron: '0 7 * * *'    # JST 16:00
     - cron: '0 10 * * *'   # JST 19:00
   workflow_dispatch:
 jobs:
