@@ -40,8 +40,8 @@ def main():
 
     headers = all_rows[0]
     try:
-        col_status = headers.index("ステータス")
-        col_body = headers.index("投稿本文")
+        col_status = headers.index("状態")
+        col_body = headers.index("投稿文")
     except ValueError as e:
         print(f"ヘッダーが見つかりません: {e}")
         print(f"ヘッダー一覧: {headers}")
@@ -53,7 +53,7 @@ def main():
         status = row[col_status] if col_status < len(row) else ""
         body = row[col_body] if col_body < len(row) else ""
 
-        if status == "投稿前" and body:
+        if status in ("投稿前", "未投稿") and body:
             new_body = remove_hashtags(body)
             if new_body != body:
                 # gspreadのA1記法: 行番号i, 列番号(col_body+1)
