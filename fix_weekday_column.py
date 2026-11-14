@@ -32,9 +32,14 @@ def main():
         if status != "投稿前":
             continue
         sched_str = row[col_sched].strip() if len(row) > col_sched else ""
-        try:
-            sched_dt = datetime.strptime(sched_str, "%Y/%m/%d %H:%M").replace(tzinfo=JST)
-        except:
+        sched_dt = None
+        for fmt in ("%Y/%m/%d %H:%M", "%Y-%m-%d %H:%M"):
+            try:
+                sched_dt = datetime.strptime(sched_str, fmt).replace(tzinfo=JST)
+                break
+            except ValueError:
+                continue
+        if sched_dt is None:
             continue
 
         correct_wd = WEEKDAYS_JP[sched_dt.weekday()]

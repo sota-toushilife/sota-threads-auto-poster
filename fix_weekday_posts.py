@@ -57,7 +57,14 @@ def main():
         sched_str = row[col_sched].strip() if len(row) > col_sched else ""
         body = row[col_body].strip() if len(row) > col_body else ""
         try:
-            sched_dt = datetime.strptime(sched_str, "%Y/%m/%d %H:%M").replace(tzinfo=JST)
+            for fmt in ("%Y/%m/%d %H:%M", "%Y-%m-%d %H:%M"):
+                try:
+                    sched_dt = datetime.strptime(sched_str, fmt).replace(tzinfo=JST)
+                    break
+                except ValueError:
+                    continue
+            else:
+                continue
         except:
             continue
         if sched_dt <= now_jst:
